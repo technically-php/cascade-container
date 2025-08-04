@@ -1,3 +1,8 @@
+.PHONY: test
+
+test: vendor
+	php vendor/bin/pest
+
 vendor: composer.json composer.phar
 	php composer.phar install
 
