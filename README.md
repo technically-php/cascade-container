@@ -283,6 +283,10 @@ License
 
 This project is licensed under the terms of the [MIT license].
 
+Credits
+-------
+
+Implemented by 👾 [Ivan Voskoboinyk](https://voskoboinyk.com/).
 
 [psr-11]: https://github.com/container-interop/fig-standards/blob/master/proposed/container.md
 [callable]: http://php.net/manual/en/language.types.callable.php
