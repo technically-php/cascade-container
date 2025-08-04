@@ -3,6 +3,7 @@
 namespace Technically\CascadeContainer;
 
 use Exceptions\ServiceNotFound;
+use InvalidArgumentException;
 use Psr\Container\ContainerInterface;
 use Technically\DependencyResolver\Contracts\DependencyResolver as DependencyResolverInterface;
 use Technically\DependencyResolver\DependencyResolver;
@@ -22,6 +23,9 @@ final class CascadeContainer implements ContainerInterface
 
     /** @var array<string,callable> */
     private array $factories = [];
+
+    /** @var array<string,string> */
+    private array $aliases = [];
 
     public function __construct(
         ContainerInterface | null   $parent = null,
@@ -44,6 +48,10 @@ final class CascadeContainer implements ContainerInterface
 
     public function get(string $id)
     {
+        if (array_key_exists($id, $this->aliases)) {
+            return $this->get($this->aliases[$id]);
+        }
+
         if (array_key_exists($id, $this->instances)) {
             return $this->instances[$id];
         }
@@ -61,6 +69,10 @@ final class CascadeContainer implements ContainerInterface
 
     public function has(string $id): bool
     {
+        if (array_key_exists($id, $this->aliases)) {
+            return $this->has($this->aliases[$id]);
+        }
+
         return array_key_exists($id, $this->instances)
                || array_key_exists($id, $this->factories)
                || $this->parent->has($id);
@@ -76,6 +88,18 @@ final class CascadeContainer implements ContainerInterface
     public function set(string $id, mixed $instance): void
     {
         $this->instances[$id] = $instance;
+
+        unset($this->factories[$id]);
+        unset($this->aliases[$id]);
+    }
+
+    public function alias(string $id, string $alias): void
+    {
+        if ($id === $alias) {
+            throw new InvalidArgumentException('Cannot alias a service to itself.');
+        }
+
+        $this->aliases[$alias] = $id;
     }
 
     /**
@@ -94,6 +118,8 @@ final class CascadeContainer implements ContainerInterface
     public function factory(string $id, callable $constructor): void
     {
         $this->factories[$id] = $constructor;
+
+        unset($this->aliases[$id]);
     }
 
     /**
@@ -115,6 +141,8 @@ final class CascadeContainer implements ContainerInterface
 
             return $instance;
         };
+
+        unset($this->aliases[$id]);
     }
 
     /**

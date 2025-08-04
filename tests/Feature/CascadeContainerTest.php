@@ -72,6 +72,21 @@ describe('CascadeContainer::has()', function () {
 
         expect($container->has('container'))->toBeTrue();
     });
+
+    it('should take defined aliases into account', function () {
+        $container = new CascadeContainer();
+        $container->factory('container', fn () => $container);
+        $container->alias('container', ContainerInterface::class);
+
+        expect($container->has(ContainerInterface::class))->toBeTrue();
+    });
+
+    it('should dynamically resolve aliases to check if the aliased service is defined', function () {
+        $container = new CascadeContainer();
+        $container->alias('container', ContainerInterface::class);
+
+        expect($container->has(ContainerInterface::class))->toBeFalse();
+    });
 });
 
 describe('CascadeContainer::get()', function () {
@@ -149,6 +164,48 @@ describe('CascadeContainer::set()', function () {
         $container->set('container', $container);
 
         expect($container->get('container'))->toBe($container);
+    });
+
+    it('should overwrite existing aliases', function () {
+        $container = new CascadeContainer(
+            new ArrayContainer([
+                ContainerInterface::class => new NullContainer(),
+            ]),
+        );
+        $container->alias(ContainerInterface::class, alias: 'container');
+        $container->set('container', $container);
+
+        expect($container->get('container'))->toBe($container);
+    });
+});
+
+describe('CascadeContainer::alias()', function () {
+    it('should set aliases to existing service instances', function () {
+        $container = new CascadeContainer();
+        $container->set(ContainerInterface::class, $container);
+
+        $container->alias(ContainerInterface::class, alias: 'container');
+
+        expect($container->get('container'))->toBe($container);
+        expect($container->get(ContainerInterface::class))->toBe($container);
+    });
+
+    it('should set aliases to existing service resolvers', function () {
+        $container = new CascadeContainer();
+        $container->resolver(ContainerInterface::class, fn () => $container);
+
+        $container->alias(ContainerInterface::class, alias: 'container');
+
+        expect($container->get(ContainerInterface::class))->toBe($container);
+    });
+
+    it('should set aliases to existing service factories', function () {
+        $container = new CascadeContainer();
+        $container->factory(DateTime::class, fn () => new DateTime('now'));
+
+        $container->alias(DateTime::class, alias: 'date');
+
+        expect($container->get('date'))->toBeInstanceOf(DateTime::class);
     });
 });
 
