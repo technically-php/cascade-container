@@ -1,6 +1,6 @@
 <?php
 
-namespace Exceptions;
+namespace Technically\CascadeContainer\Exceptions;
 
 use Psr\Container\NotFoundExceptionInterface;
 use RuntimeException;
@@ -11,6 +11,8 @@ class ServiceNotFound extends RuntimeException implements NotFoundExceptionInter
 
     public function __construct(string $serviceName)
     {
+        $this->serviceName = $serviceName;
+
         parent::__construct("Service `{$serviceName}` is not defined in the container.");
     }
 

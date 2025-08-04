@@ -218,12 +218,12 @@ describe('CascadeContainer::resolver()', function () {
         expect($container->get('date') === $container->get('date'))->toBeTrue(); // The same instance is returned every time
     });
 
-    it('should not override previously defined instances', function () {
+    it('should override previously defined instances', function () {
         $container = new CascadeContainer();
         $container->set('container', $container);
         $container->deferred('container', fn () => new NullContainer());
 
-        expect($container->get('container'))->toBe($container);
+        expect($container->get('container'))->toBeInstanceOf(NullContainer::class);
     });
 
     it('should override previously defined factories', function () {
@@ -243,14 +243,14 @@ describe('CascadeContainer::resolver()', function () {
         expect($container->get('container'))->toBe($container);
     });
 
-    it('it should not override previously defined resolved deferred resolvers', function () {
+    it('it should override previously defined resolved deferred resolvers', function () {
         $container = new CascadeContainer();
 
         $container->deferred('container', fn () => new NullContainer());
         expect($container->get('container'))->toBeInstanceOf(NullContainer::class);
 
         $container->deferred('container', fn () => $container);
-        expect($container->get('container'))->toBeInstanceOf(NullContainer::class);
+        expect($container->get('container'))->toBeInstanceOf(CascadeContainer::class);
     });
 
     it('should take precedence over parent container', function () {
@@ -289,12 +289,12 @@ describe('CascadeContainer::factory()', function () {
         expect($container->get('date') === $container->get('date'))->toBeFalse(); // A new instance is returned every time
     });
 
-    it('should not override previously defined instances', function () {
+    it('should override previously defined instances', function () {
         $container = new CascadeContainer();
         $container->set('container', $container);
         $container->factory('container', fn () => new NullContainer());
 
-        expect($container->get('container'))->toBe($container);
+        expect($container->get('container'))->toBeInstanceOf(NullContainer::class);
     });
 
     it('should override previously defined factories', function () {
@@ -313,15 +313,14 @@ describe('CascadeContainer::factory()', function () {
         expect($container->get('container'))->toBe($container);
     });
 
-    it('it should not override previously defined resolved deferred resolvers', function () {
+    it('it should override previously defined resolved deferred resolvers', function () {
         $container = new CascadeContainer();
 
         $container->deferred('container', fn () => new NullContainer());
         expect($container->get('container'))->toBeInstanceOf(NullContainer::class);
 
         $container->factory('container', fn () => $container);
-
-        expect($container->get('container'))->toBeInstanceOf(NullContainer::class);
+        expect($container->get('container'))->toBe($container);
     });
 
     it('should take precedence over parent container', function () {
@@ -348,6 +347,91 @@ describe('CascadeContainer::factory()', function () {
         });
 
         $container->get('logger')('Hello world!');
+    });
+});
+
+describe('CascadeContainer::extend()', function () {
+    it('should extend the existing service instance', function () {
+        $container = new CascadeContainer();
+        $container->set('container', new NullContainer());
+
+        expect($container->get('container'))->toBeInstanceOf(NullContainer::class);
+
+        $container->extend('container', function ($container) {
+            expect($container)->toBeInstanceOf(NullContainer::class);
+
+            return new CascadeContainer(parent: $container);
+        });
+
+        expect($container->get('container'))->toBeInstanceOf(CascadeContainer::class);
+    });
+
+    it('should extend deferred service resolvers', function () {
+        $container = new CascadeContainer();
+        $container->deferred('container', fn () => new NullContainer());
+
+        $container->extend('container', function ($container) {
+            expect($container)->toBeInstanceOf(NullContainer::class);
+
+            return new CascadeContainer(parent: $container);
+        });
+
+        expect($container->get('container'))->toBeInstanceOf(CascadeContainer::class);
+    });
+
+    it('should extend service factories', function () {
+        $container = new CascadeContainer();
+
+        $container->factory('date', fn () => new DateTime('now'));
+
+        $container->extend('date', function ($date) {
+            expect($date)->toBeInstanceOf(DateTime::class);
+
+            $date->setTimezone(new DateTimeZone('Europe/Madrid'));
+
+            return $date;
+        });
+
+        expect($container->get('date'))->toBeInstanceOf(DateTime::class);
+        expect($container->get('date')->getTimeZone())->toEqual(new DateTimeZone('Europe/Madrid'));
+
+        expect($container->get('date') !== $container->get('date'))->toBeTrue();
+    });
+
+    it('should extend services by their aliases', function () {
+        $container = new CascadeContainer();
+
+        $container->set('container', $container);
+        $container->alias('container', alias: ContainerInterface::class);
+
+        $container->extend(ContainerInterface::class, function ($container) {
+            expect($container)->toBeInstanceOf(CascadeContainer::class);
+
+            assert($container instanceof CascadeContainer);
+
+            return $container->cascade();
+        });
+
+        expect($container->get('container'))->toBeInstanceOf(CascadeContainer::class);
+        expect($container->get(ContainerInterface::class))->toBeInstanceOf(CascadeContainer::class);
+
+        expect($container->get('container') === $container->get(ContainerInterface::class))->toBeTrue();
+        expect($container->get('container') === $container)->toBeFalse();
+    });
+
+    it('it should call a callback function auto-wiring its arguments', function () {
+        $container = new CascadeContainer();
+        $container->deferred(DateTime::class, fn () => new DateTime('2025-01-01T12:00:00Z'));
+        $container->factory(ContainerInterface::class, fn () => new NullContainer());
+
+        $container->extend(ContainerInterface::class, function (ContainerInterface $container, DateTime $date) {
+            expect($date)->toEqual(new DateTime('2025-01-01T12:00:00Z'));
+            expect($container)->toBeInstanceOf(NullContainer::class);
+
+            return new ArrayContainer();
+        });
+
+        expect($container->get(ContainerInterface::class))->toBeInstanceOf(ArrayContainer::class);
     });
 });
 

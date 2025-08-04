@@ -2,9 +2,9 @@
 
 namespace Technically\CascadeContainer;
 
-use Exceptions\ServiceNotFound;
 use InvalidArgumentException;
 use Psr\Container\ContainerInterface;
+use Technically\CascadeContainer\Exceptions\ServiceNotFound;
 use Technically\DependencyResolver\Contracts\DependencyResolver as DependencyResolverInterface;
 use Technically\DependencyResolver\DependencyResolver;
 use Technically\DependencyResolver\Exceptions\CannotAutowireArgument;
@@ -22,7 +22,10 @@ final class CascadeContainer implements ContainerInterface
     private array $instances = [];
 
     /** @var array<string,callable> */
-    private array $resolvers = [];
+    private array $deferred = [];
+
+    /** @var array<string,callable> */
+    private array $factories = [];
 
     /** @var array<string,string> */
     private array $aliases = [];
@@ -56,8 +59,16 @@ final class CascadeContainer implements ContainerInterface
             return $this->instances[$id];
         }
 
-        if (array_key_exists($id, $this->resolvers)) {
-            return $this->call($this->resolvers[$id]);
+        if (array_key_exists($id, $this->deferred)) {
+            $instance = $this->call($this->deferred[$id]);
+
+            $this->instances[$id] = $instance;
+
+            return $instance;
+        }
+
+        if (array_key_exists($id, $this->factories)) {
+            return $this->call($this->factories[$id]);
         }
 
         if ($this->parent->has($id)) {
@@ -74,7 +85,8 @@ final class CascadeContainer implements ContainerInterface
         }
 
         return array_key_exists($id, $this->instances)
-               || array_key_exists($id, $this->resolvers)
+               || array_key_exists($id, $this->deferred)
+               || array_key_exists($id, $this->factories)
                || $this->parent->has($id);
     }
 
@@ -87,14 +99,15 @@ final class CascadeContainer implements ContainerInterface
      */
     public function set(string $id, mixed $instance): void
     {
-        $this->instances[$id] = $instance;
+        $this->forget($id);
 
-        unset($this->resolvers[$id]);
-        unset($this->aliases[$id]);
+        $this->instances[$id] = $instance;
     }
 
     public function alias(string $id, string $alias): void
     {
+        $this->forget($alias);
+
         if ($id === $alias) {
             throw new InvalidArgumentException('Cannot alias a service to itself.');
         }
@@ -117,9 +130,9 @@ final class CascadeContainer implements ContainerInterface
      */
     public function factory(string $id, callable $constructor): void
     {
-        $this->resolvers[$id] = $constructor;
+        $this->forget($id);
 
-        unset($this->aliases[$id]);
+        $this->factories[$id] = $constructor;
     }
 
     /**
@@ -134,15 +147,9 @@ final class CascadeContainer implements ContainerInterface
      */
     public function deferred(string $id, callable $resolver): void
     {
-        $this->resolvers[$id] = function () use ($id, $resolver): mixed {
-            $instance = $this->call($resolver);
+        $this->forget($id);
 
-            $this->set($id, $instance);
-
-            return $instance;
-        };
-
-        unset($this->aliases[$id]);
+        $this->deferred[$id] = $resolver;
     }
 
     /**
@@ -163,6 +170,55 @@ final class CascadeContainer implements ContainerInterface
         }
 
         return $this->resolver->resolve($id);
+    }
+
+    /**
+     * Extend the existing service by applying the callback function to it.
+     *
+     * - Whatever the callback function returns will replace the previous instance.
+     * - If the service being extended is defined via a deferred resolver, the extension will become a deferred resolver too.
+     * - If the service being extended is defined as a factory, the extension will become a factory too.
+     *
+     * @param string   $id
+     * @param callable $extension
+     * @return void
+     */
+    public function extend(string $id, callable $extension): void
+    {
+        if (array_key_exists($id, $this->aliases)) {
+            $this->extend($this->aliases[$id], $extension);
+            return;
+        }
+
+        if (array_key_exists($id, $this->instances)) {
+            $this->instances[$id] = $this->call($extension, [$this->instances[$id]]);
+            return;
+        }
+
+        if (array_key_exists($id, $this->deferred)) {
+            $resolver            = $this->deferred[$id];
+            $this->deferred[$id] = function () use ($extension, $resolver) {
+                return $this->call($extension, [$this->call($resolver)]);
+            };
+            return;
+        }
+
+        if (array_key_exists($id, $this->factories)) {
+            $factory              = $this->factories[$id];
+            $this->factories[$id] = function () use ($extension, $factory) {
+                return $this->call($extension, [$this->call($factory)]);
+            };
+            return;
+        }
+
+        if ($this->parent->has($id)) {
+            $this->deferred[$id] = function () use ($extension, $id) {
+                return $this->call($extension, [$this->parent->get($id)]);
+            };
+            return;
+        }
+
+        throw new ServiceNotFound($id);
     }
 
     /**
@@ -196,5 +252,16 @@ final class CascadeContainer implements ContainerInterface
     public function call(callable $callable, array $bindings = []): mixed
     {
         return $this->resolver->call($callable, $bindings);
+    }
+
+    /**
+     * Erase any definitions for the given service.
+     */
+    private function forget(string $id): void
+    {
+        unset($this->aliases[$id]);
+        unset($this->instances[$id]);
+        unset($this->deferred[$id]);
+        unset($this->factories[$id]);
     }
 }
