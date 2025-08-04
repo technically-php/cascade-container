@@ -1,0 +1,36 @@
+{
+    "name": "technically/cascade-container",
+    "description": "A simple yet powerful PSR-11 based service container implementation with layers and dependencies auto-wiring.",
+    "type": "library",
+    "require": {
+        "php": "^8.0",
+        "psr/container": "^2.0",
+        "technically/dependency-resolver": "^1.0.0"
+    },
+    "require-dev": {
+        "pestphp/pest": "^3.8"
+    },
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Technically\\CascadeContainer\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Ivan Voskoboinyk",
+            "email": "ivan@voskoboinyk.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}
