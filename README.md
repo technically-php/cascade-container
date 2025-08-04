@@ -1,6 +1,8 @@
 # Technically Cascade Container
 
-🧅 `Technically\CascadeContainer` is simple yet powerful PSR-11 based service container implementation with layers and dependencies auto-wiring. 
+🧅 `Technically\CascadeContainer` is simple yet powerful PSR-11 based service container implementation with layers and dependencies auto-wiring.
+
+[![Test](https://github.com/technically-php/cascade-container/actions/workflows/test.yml/badge.svg)](https://github.com/technically-php/cascade-container/actions/workflows/test.yml)
 
 ### Philosophy
 
