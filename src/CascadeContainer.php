@@ -22,7 +22,7 @@ final class CascadeContainer implements ContainerInterface
     private array $instances = [];
 
     /** @var array<string,callable> */
-    private array $factories = [];
+    private array $resolvers = [];
 
     /** @var array<string,string> */
     private array $aliases = [];
@@ -56,8 +56,8 @@ final class CascadeContainer implements ContainerInterface
             return $this->instances[$id];
         }
 
-        if (array_key_exists($id, $this->factories)) {
-            return $this->call($this->factories[$id]);
+        if (array_key_exists($id, $this->resolvers)) {
+            return $this->call($this->resolvers[$id]);
         }
 
         if ($this->parent->has($id)) {
@@ -74,7 +74,7 @@ final class CascadeContainer implements ContainerInterface
         }
 
         return array_key_exists($id, $this->instances)
-               || array_key_exists($id, $this->factories)
+               || array_key_exists($id, $this->resolvers)
                || $this->parent->has($id);
     }
 
@@ -89,7 +89,7 @@ final class CascadeContainer implements ContainerInterface
     {
         $this->instances[$id] = $instance;
 
-        unset($this->factories[$id]);
+        unset($this->resolvers[$id]);
         unset($this->aliases[$id]);
     }
 
@@ -107,9 +107,9 @@ final class CascadeContainer implements ContainerInterface
      *
      * The function will be invoked every time the service is requested.
      * If you wish to remember the result of the constructor function,
-     * use `->resolver()`.
+     * use `->deferred()`.
      *
-     * @see resolver()
+     * @see deferred()
      *
      * @param string   $id
      * @param callable $constructor
@@ -117,25 +117,25 @@ final class CascadeContainer implements ContainerInterface
      */
     public function factory(string $id, callable $constructor): void
     {
-        $this->factories[$id] = $constructor;
+        $this->resolvers[$id] = $constructor;
 
         unset($this->aliases[$id]);
     }
 
     /**
-     * Bind a resolver (i.e. one-time factory) for the given service ID.
+     * Bind a deferred resolver (i.e. one-time factory) for the given service ID.
      *
-     * Unlike factories, the resolver will be invoked only once -- for the very first time,
+     * Unlike factories, the deferred resolver will be invoked only once -- for the very first time,
      * and then its result will be remembered as a regular service instance defined in the container.
      *
      * @param string   $id
-     * @param callable $factory
+     * @param callable $resolver
      * @return void
      */
-    public function resolver(string $id, callable $factory): void
+    public function deferred(string $id, callable $resolver): void
     {
-        $this->factories[$id] = function () use ($id, $factory): mixed {
-            $instance = $this->call($factory);
+        $this->resolvers[$id] = function () use ($id, $resolver): mixed {
+            $instance = $this->call($resolver);
 
             $this->set($id, $instance);
 
