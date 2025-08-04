@@ -263,6 +263,21 @@ describe('CascadeContainer::resolver()', function () {
 
         expect($container->get('container'))->toBe($container);
     });
+
+    it('should autowire resolver function parameters', function () {
+        $container = new CascadeContainer();
+        $container->set(DateTime::class, new DateTime('2025-01-01T12:00:00Z'));
+
+        $container->resolver('logger', function (DateTime $date) {
+            expect($date)->toEqual(new DateTime('2025-01-01T12:00:00Z'));
+
+            return function (string $message) use ($date) {
+                error_log(sprintf('[%s] %s', $date->format('Y-m-d H:i:s'), $message));
+            };
+        });
+
+        $container->get('logger')('Hello world!');
+    });
 });
 
 describe('CascadeContainer::factory()', function () {
@@ -318,6 +333,21 @@ describe('CascadeContainer::factory()', function () {
         $container->factory('container', fn () => $container);
 
         expect($container->get('container'))->toBe($container);
+    });
+
+    it('should autowire factory function parameters', function () {
+        $container = new CascadeContainer();
+        $container->set(DateTime::class, new DateTime('2025-01-01T12:00:00Z'));
+
+        $container->factory('logger', function (DateTime $date) {
+            expect($date)->toEqual(new DateTime('2025-01-01T12:00:00Z'));
+
+            return function (string $message) use ($date) {
+                error_log(sprintf('[%s] %s', $date->format('Y-m-d H:i:s'), $message));
+            };
+        });
+
+        $container->get('logger')('Hello world!');
     });
 });
 
