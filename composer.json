@@ -5,7 +5,9 @@
     "require": {
         "php": "^8.0",
         "psr/container": "^2.0",
-        "technically/dependency-resolver": "^1.0.0"
+        "technically/dependency-resolver": "^1.0.0",
+        "technically/null-container": "^2.0",
+        "technically/array-container": "^2.0"
     },
     "require-dev": {
         "pestphp/pest": "^3.8"
