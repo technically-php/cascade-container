@@ -30,11 +30,24 @@ final class CascadeContainer implements ContainerInterface
     /** @var array<string,string> */
     private array $aliases = [];
 
+    /**
+     * @param ContainerInterface|array<string,mixed>|null $parent Parent container or initial service instances array map
+     * @param DependencyResolverInterface|null            $resolver
+     */
     public function __construct(
-        ContainerInterface | null   $parent = null,
-        DependencyResolverInterface $resolver = null,
+        ContainerInterface | array | null $parent = null,
+        DependencyResolverInterface       $resolver = null,
     ) {
-        $this->parent = $parent ?: new NullContainer();
+        if (is_array($parent)) {
+            foreach ($parent as $id => $instance) {
+                if ( ! is_string($id)) {
+                    throw new InvalidArgumentException('The service ids have to be strings.');
+                }
+                $this->instances[$id] = $instance;
+            }
+        }
+
+        $this->parent   = $parent instanceof ContainerInterface ? $parent : new NullContainer();
         $this->resolver = $resolver ?: new DependencyResolver($this);
     }
 

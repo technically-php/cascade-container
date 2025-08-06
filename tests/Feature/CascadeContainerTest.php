@@ -17,6 +17,17 @@ describe('CascadeContainer::__construct()', function () {
         expect(new CascadeContainer($parent))->toBeInstanceOf(CascadeContainer::class);
     });
 
+    it('should construct a new instance with initial services', function () {
+        $container = new CascadeContainer([
+            'logger' => function (string $message) {
+                echo $message, PHP_EOL;
+            },
+        ]);
+
+        expect($container->has('logger'))->toBeTrue();
+        expect($container->get('logger'))->toBeCallable();
+    });
+
     it('should construct a new instance of CascadeContainer with a custom resolver', function () {
         $resolver = new class implements DependencyResolver {
             public function resolve(string $className): mixed
