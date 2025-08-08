@@ -1,4 +1,4 @@
-<img src="https://github.com/user-attachments/assets/a99a795d-3c73-414a-9707-ccb865f8f981">
+<img src="https://github.com/user-attachments/assets/bc77d08e-8926-4734-9a59-7104775b1a99" alt="Project logo: image showing an onion with the text Technically Cascade Contianer">
 
 # Technically Cascade Container
 
