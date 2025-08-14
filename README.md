@@ -15,9 +15,8 @@
 
 ### Features
 
-- Supports inheriting services from a parent PSR-11 Service Container
-- Supports forking the service container instance into an isolated layer,
-  inheriting all existing service definitions from the original container.
+- Inherits services from a parent PSR-11 Service Container
+- Can be forked into a new isolated container, inheriting all services definitions from the original container
 - [PSR Container][psr-11] compatibility
 - Autowiring &mdash; automatic dependencies resolution
 - Full PHP 8.0+ features support for auto-wiring (e.g. union types)
