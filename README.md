@@ -16,7 +16,7 @@
 ### Features
 
 - Inherits services from a parent PSR-11 Service Container
-- Can be forked into a new isolated container, inheriting all services definitions from the original container
+- [Can be forked into a new isolated container](#isolated-layers-forked-from-the-service-container), inheriting all services definitions from the original container
 - [PSR Container][psr-11] compatibility
 - Autowiring &mdash; automatic dependencies resolution
 - Full PHP 8.0+ features support for auto-wiring (e.g. union types)
@@ -205,8 +205,12 @@ But defining new scope variables won't modify the parent scope. That's it.
 $project = new CascadeContainer();
 $project->set('configuration', $config);
 
-$module = $project->cascade();
-$module->set('configuration', $config->extend($local));
+$module = $project->cascade(); // MAGIC! ✨
+
+// Override existing services. It does not affect 'configuration' service in the parent container.
+$module->set('configuration', $moduleConfig); 
+
+// Define new services. They'll only exist on the current layer.
 $module->factory('request', function () {
     // ...
 });
