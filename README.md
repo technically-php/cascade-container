@@ -21,6 +21,35 @@
 - Autowiring &mdash; automatic dependencies resolution
 - Full PHP 8.0+ features support for auto-wiring (e.g. union types)
 
+
+```php
+use Technically\CascadeContainer\CascadeContainer;
+
+$container = new CascadeContainer();
+
+$container->set('config', $config);
+
+// Lazy-evaluated services
+$container->deferred('mailer', function () {
+   // lazily initialize mailer service here
+   $mailer =  /* ... */;
+
+   return $mailer;
+});
+
+// On-demand object factories (executes every time 'request' is obtained from the container)
+$container->factory('request', fn () => $requestFactory->createRequest());
+
+// ✨ CASCADING LAYERS ✨
+
+// Fork the container into an isolated layer, inheriting everything from above.
+// Override services or define new ones. The changes won't affect the parent $container instance.
+$environment = $container->cascade();
+
+// For example, we want to use a different mailer implementation in the tests environment:
+$environment->deferred('mailer', fn () => new NullMailer());
+```
+
 Usage
 -----
 
@@ -205,18 +234,18 @@ But defining new scope variables won't modify the parent scope. That's it.
 $project = new CascadeContainer();
 $project->set('configuration', $config);
 
-$module = $project->cascade(); // MAGIC! ✨
+$environment = $project->cascade(); // MAGIC! ✨
 
 // Override existing services. It does not affect 'configuration' service in the parent container.
-$module->set('configuration', $moduleConfig); 
+$environment->set('configuration', $moduleConfig); 
 
 // Define new services. They'll only exist on the current layer.
-$module->factory('request', function () {
+$environment->factory('request', function () {
     // ...
 });
 // and so on
 
-assert($project->get('configuration') !== $module->get('configuration')); // Parent service "configuration" instance remained unchanged
+assert($project->get('configuration') !== $environment->get('configuration')); // Parent service "configuration" instance remained unchanged
 ```      
 
 
