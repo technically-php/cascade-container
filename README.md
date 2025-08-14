@@ -141,6 +141,8 @@ You can declare a service by providing a deferred resolver function for it.
 The service container will call that function for the first time the service 
 is requested and remember the result.
 
+This pattern is often called *lazy initialization*.
+
 - `::deferred(string $serviceId, callable $resolver): void` &mdash; Provide a deferred resolver for the given service name.
 
 *Note: the callback function parameters are auto-wired the same way as with the `->call()` API.*
@@ -166,7 +168,7 @@ assert($connection === $same_connection); // The same instance
 You can also provide a factory function to be used to construct a new service instance
 every time it is requested. 
 
-It works very similarly to `->resolver()`, but calls the factory function every time.
+It works very similarly to `->deferred()`, but calls the factory function every time.
 
 - `::factory(string $serviceId, callable $factory): void` &mdash; Bind a service to a factory function to be called every time it is requested.
 
