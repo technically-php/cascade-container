@@ -54,8 +54,6 @@ final class CascadeContainer implements ContainerInterface
     /**
      * Create a new nested isolated layer of the CascadeContainer.
      * Anything defined in the nested layer will not affect the parent container.
-     *
-     * @return CascadeContainer
      */
     public function cascade(): self
     {
@@ -105,10 +103,6 @@ final class CascadeContainer implements ContainerInterface
 
     /**
      * Bind the given instance as a service to the service container.
-     *
-     * @param string $id
-     * @param mixed  $instance
-     * @return void
      */
     public function set(string $id, mixed $instance): void
     {
@@ -136,10 +130,6 @@ final class CascadeContainer implements ContainerInterface
      * use `->deferred()`.
      *
      * @see deferred()
-     *
-     * @param string   $id
-     * @param callable $constructor
-     * @return void
      */
     public function factory(string $id, callable $constructor): void
     {
@@ -153,10 +143,6 @@ final class CascadeContainer implements ContainerInterface
      *
      * Unlike factories, the deferred resolver will be invoked only once -- for the very first time,
      * and then its result will be remembered as a regular service instance defined in the container.
-     *
-     * @param string   $id
-     * @param callable $resolver
-     * @return void
      */
     public function deferred(string $id, callable $resolver): void
     {
@@ -171,8 +157,6 @@ final class CascadeContainer implements ContainerInterface
      * It can be either found in the container or constructed on the fly,
      * recursively auto-resolving the required parameters.
      *
-     * @param string $id
-     * @return mixed
      * @throws \Psr\Container\ContainerExceptionInterface
      * @throws \Psr\Container\NotFoundExceptionInterface
      */
@@ -191,10 +175,6 @@ final class CascadeContainer implements ContainerInterface
      * - Whatever the callback function returns will replace the previous instance.
      * - If the service being extended is defined via a deferred resolver, the extension will become a deferred resolver too.
      * - If the service being extended is defined as a factory, the extension will become a factory too.
-     *
-     * @param string   $id
-     * @param callable $extension
-     * @return void
      */
     public function extend(string $id, callable $extension): void
     {
@@ -240,9 +220,10 @@ final class CascadeContainer implements ContainerInterface
      * Even if the container already has the instance bound,
      * it will still be instantiated.
      *
-     * @param class-string        $className
+     * @template T
+     * @param class-string<T>     $className
      * @param array<string,mixed> $bindings
-     * @return object
+     * @return T
      *
      * @throws ClassCannotBeInstantiated
      * @throws CannotAutowireDependencyArgument
