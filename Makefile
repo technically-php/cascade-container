@@ -1,6 +1,6 @@
-.PHONY: test
+.PHONY: tests
 
-test: vendor
+tests: vendor
 	php vendor/bin/pest
 
 vendor: composer.json composer.phar
