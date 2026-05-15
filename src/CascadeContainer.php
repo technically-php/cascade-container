@@ -35,8 +35,8 @@ final class CascadeContainer implements ContainerInterface
      * @param DependencyResolverInterface|null            $resolver
      */
     public function __construct(
-        ContainerInterface | array | null $parent = null,
-        DependencyResolverInterface       $resolver = null,
+        ContainerInterface | array | null  $parent = null,
+        DependencyResolverInterface | null $resolver = null,
     ) {
         if (is_array($parent)) {
             foreach ($parent as $id => $instance) {
