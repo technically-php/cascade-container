@@ -10,7 +10,7 @@
 
 - [PSR Container][psr-11] compatibility
 - [Semantic Versioning](http://semver.org/)
-- PHP 8.0+
+- PHP 8.2+
 - Minimal yet elegant API
 
 ### Features
